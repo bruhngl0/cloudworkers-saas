@@ -24,7 +24,10 @@ export const blogRouter = new Hono<{
 
 blogRouter.use("/*" , async(c, next)=>{
    const authHeader = c.req.header("Authorization") || "";
-
+    if(!authHeader){
+        c.status(400)
+        return c.json({message: "haeader is not reaching here correctly"})
+    }
    try {
     const user  = await verify(authHeader, c.env.JWT_SECRET)
     if(!user){

@@ -1,6 +1,6 @@
 {
   "name": "@bruhngl/medium-saas",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "main": "dist/index.js",
   "dependencies": {
     "zod": "^3.24.1"

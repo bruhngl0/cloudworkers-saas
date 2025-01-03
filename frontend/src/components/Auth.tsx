@@ -27,9 +27,10 @@ const navigate = useNavigate()
    try {
     const response = await axios.post(`${BACKEND_URL}/api/v1/user/${type === "signin" ? "signin" : "signup"}` , post)
     const jwt = response.data
-    console.log(jwt)
-    localStorage.setItem("token" , jwt)
-    navigate("/blog")
+    console.log(jwt.token)
+
+    localStorage.setItem("token" , jwt.token)
+     navigate("/blog")
    } catch (error) {
     alert("error while signing up")
    }
