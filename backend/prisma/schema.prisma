@@ -13,6 +13,7 @@ model User {
   name     String? 
   password String
   post     Post[]
+  quote  Quote[]
   createdAt DateTime @default(now()) @db.Timestamp(6)
 
 }
@@ -22,6 +23,15 @@ model Post {
   title     String   @db.VarChar(255)
   content   String
   publish   Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Quote {
+  id String @id @default(uuid())
+  selectedText   String
+   publish   Boolean  @default(false)
   createdAt DateTime @default(now()) @db.Timestamp(6)
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])

@@ -120,11 +120,6 @@ blogRouter.put("/", async (c)=>{
     }).$extends(withAccelerate())
     try {
         const blogs = await prisma.post.findMany()
-        if(!blogs){
-            c.status(404)
-            return c.json({error : "wrong route"})
-        }
-
         return c.json({blogs: blogs})
 
     } catch (error) {
