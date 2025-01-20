@@ -128,6 +128,39 @@ blogRouter.put("/", async (c)=>{
    
   })
 
+  blogRouter.get("/myblog", async (c) => {
+    const prisma = new PrismaClient({
+      datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate());
+  
+    try {
+      const authorId = c.get("userId");
+      if (!authorId) {
+        c.status(401);
+        return c.json({ error: "User ID not found. Unauthorized." });
+      }
+  
+      console.log("Querying blogs for authorId:", authorId);
+  
+      const data = await prisma.post.findMany({
+        where: {
+          authorId: authorId,
+        },
+      });
+  
+      if (data.length === 0) {
+        return c.json({ message: "No blogs found for the user.", blogs: [] });
+      }
+  
+      c.status(200);
+      return c.json({ data });
+    } catch (error) {
+      console.error("Error fetching user's blogs:", error);
+      c.status(500);
+      return c.json({ error: "Failed to fetch user's blogs." });
+    }
+  });
+
 
 
   
@@ -157,5 +190,32 @@ blogRouter.get("/:id" , async(c)=>{
   })
 
 
+  blogRouter.delete("/:id" , async(c)=>{
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL
+    }).$extends(withAccelerate()) 
+    const id=  c.req.param("id")
+  try {
+    const blog = await prisma.post.delete({
+        where:{
+            id: id
+        }
+    })
+    c.status(200)
+    return c.json({
+        blog
+    })
+  } catch (error) {
+     c.status(403)
+     return c.json({
+        error
+     })
+  }
+
+  })
+
+
+ 
+  
 
 

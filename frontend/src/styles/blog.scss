@@ -1,0 +1,53 @@
+/* blogList.scss */
+
+.blog-container {
+    padding: 20px;
+    background-color: #f9f9f9;
+    font-family: Arial, sans-serif;
+  
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 20px;
+    }
+  
+    ul {
+      list-style-type: none;
+      padding: 0;
+  
+      li {
+        background-color: #fff;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+        h2 {
+          font-size: 1.5rem;
+          color: #007bff;
+          margin: 0 0 10px;
+        }
+  
+        p {
+          font-size: 1rem;
+          color: #555;
+          line-height: 1.5;
+          margin: 0;
+        }
+  
+        &:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          transform: translateY(-2px);
+          transition: all 0.2s ease;
+        }
+      }
+    }
+  
+    .no-blogs {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #666;
+    }
+  }
+  

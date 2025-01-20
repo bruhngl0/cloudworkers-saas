@@ -1,4 +1,5 @@
 import { ChangeEvent } from "react";
+import "../styles/auth.scss"
 
 interface LabeledInputType {
    label: string;
@@ -11,7 +12,7 @@ interface LabeledInputType {
 
 function LabeledInput ({label, placeholder, type, onChange }: LabeledInputType) {
   return (
-    <div> 
+    <div className="input-group"> 
       <p>{label}</p>
       <input placeholder={placeholder} onChange={onChange} type = {type ||"text"} />
     </div>

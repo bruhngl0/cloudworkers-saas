@@ -1,9 +1,9 @@
 import Auth from "../components/Auth"
-
+import "../styles/auth.scss"
 const Signup = () => {
   return (
     <>
-    <div>Signup</div>
+    <div>SIGN UP</div>
     <Auth type =  "signup" />
     </>
   )
