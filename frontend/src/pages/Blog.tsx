@@ -83,11 +83,17 @@ const BlogList = () => {
 
      
         <button type="submit" onClick={postBlog}>add blog</button>
+        
       </form>
-
-      <Link to= "/myblogs">
-        my blogs
+     <div>
+      <Link to= "/myblogs" style={{marginRight: "5rem" , fontWeight: "900" , color: "red"}}>
+       MY MANNUAL INPUT DATA
       </Link>
+
+      <a href= "/quotes" style={{marginRight: "5rem" , fontWeight: "900" , color: "red"}}>
+        WEBAPGE CONTENT DB
+      </a>
+      </div>
       <ul>
         {blogs.length > 0 ? (
           blogs.map((blog, index) => (

@@ -44,7 +44,7 @@ quoteRouter.get("/", async(c)=>{
 
    try {
     const userId = c.get("userId")
-    const data = await prisma.quote.findFirst({ 
+    const data = await prisma.quote.findMany({ 
      where: {
          authorId : userId,
      }
