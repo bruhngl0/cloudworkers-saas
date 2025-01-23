@@ -75,7 +75,7 @@ const Auth = ({ type }: { type: "signup" | "signin" }) => {
         <button onClick={sendRequest}>Submit</button>
 
         <p>{type === "signup" ? "already have an account?" : "create an account"}</p>
-      <Link to={type === "signin" ? "/signup" : "/signin"} className="link">
+      <Link to={type === "signin" ? "/signup" : "/"} className="link">
         <p>{type === "signin" ? "SIGN UP" : "SIGN IN"}</p>
       </Link>
       </div>
