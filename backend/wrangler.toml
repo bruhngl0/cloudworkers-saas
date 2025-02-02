@@ -9,8 +9,8 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsI
 JWT_SECRET="secret"
 
 # [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# binding = "QUOTE_DATA"
+# id = "1bcaf9f042d44cbdbe3dd5bfb672b365"
 
 # [[r2_buckets]]
 # binding = "MY_BUCKET"
@@ -27,5 +27,7 @@ JWT_SECRET="secret"
 # [observability]
 # enabled = true
 # head_sampling_rate = 1
+
+
 
 

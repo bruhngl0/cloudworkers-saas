@@ -3,73 +3,148 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { verify, jwt } from "hono/jwt";
 
-
- export const quoteRouter = new Hono<{
+export const quoteRouter = new Hono<{
     Bindings: {
         DATABASE_URL: string,
         JWT_SECRET: string,
+        QUOTE_DATA: KVNamespace,
     },
-
     Variables: {
         userId: any;
     }
-}>()
+}>();
 
-quoteRouter.use("/*" , async(c, next)=>{
-   const authHeader = c.req.header("Authorization") || "";
-    if(!authHeader){
-        c.status(400)
-        return c.json({message: "haeader is not reaching here correctly"})
+
+
+
+// Authentication middleware
+quoteRouter.use("/*", async (c, next) => {
+    // Get and validate authorization header
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader || authHeader.trim() === "") {
+        c.status(401);
+        return c.json({
+            error: "Unauthorized",
+            message: "Missing authorization token"
+        });
     }
-   try {
-    const user  = await verify(authHeader, c.env.JWT_SECRET)
-    if(!user){
-     c.status(403) //invalid
+
+    try {
+        // Verify JWT token
+        const user = await verify(authHeader, c.env.JWT_SECRET);
+        
+        if (!user || !user.id) {
+            c.status(403);
+            return c.json({
+                error: "Forbidden",
+                message: "Invalid token"
+            });
+        }
+
+        // Set verified user ID in context and continue
+        c.set("userId", user.id);
+        await next();
+
+    } catch (error) {
+        // Proper error handling with specific status codes
+        if (error instanceof Error) {
+            c.status(401);
+            return c.json({
+                error: "Authentication failed",
+                message: "Token verification failed"
+            });
+        }
+        
+        c.status(500);
+        return c.json({
+            error: "Internal server error",
+            message: "Authentication process failed"
+        });
     }
-    c.set("userId", user.id)
-    await next()
-   } catch (error) {
-     c.status(404)
-     return c.json({error: "not logged in"})
-   }
-  
-})
+});
 
 
 
-quoteRouter.get("/", async(c)=>{
-   const prisma = new PrismaClient({
-    datasourceUrl : c.env.DATABASE_URL
-   }).$extends(withAccelerate())
 
-   try {
-    const userId = c.get("userId")
-    const data = await prisma.quote.findMany({ 
-     where: {
-         authorId : userId,
-     }
-    })
- 
-    c.status(200)
-    return c.json({quotes: data})
-   } catch (error) {
-     return c.json({error: "invalid req"})
-   }
-  
-})
-
-
-quoteRouter.post("/", async(c)=>{
+// Get user's quotes
+quoteRouter.get("/", async (c) => {
     const prisma = new PrismaClient({
-        datasourceUrl : c.env.DATABASE_URL
+        datasourceUrl: c.env.DATABASE_URL
     }).$extends(withAccelerate());
 
-    const body =  await c.req.json()
-    const authorId = c.get("userId")
     try {
-        if(!body){
-            c.status(400)
-            return c.json({message: "no payload"})
+        const userId = c.get("userId");
+        if (!userId) {
+            c.status(401);
+            return c.json({ 
+                error: "Unauthorized",
+                message: "User ID not found in context" 
+            });
+        }
+         const cacheKey = `quotes:user:${userId}`
+        try{ 
+       
+        const cachedQuotes  = await c.env.QUOTE_DATA.get(cacheKey);
+        if (cachedQuotes) {
+            return c.json({
+                message: "Quotes retrieved from cache",
+                quotes: JSON.parse(cachedQuotes)
+            });}
+        } catch (error) {
+            console.error("⚠️ Cache retrieval error:", error);
+        } 
+        const quotes = await prisma.quote.findMany({
+            where: {
+                authorId: userId
+            },
+            orderBy: {
+                createdAt: 'desc' // Show newest quotes first
+            }
+        });
+
+        if (quotes.length === 0) {
+            c.status(200); // Using 200 instead of 404 since empty results is not an error
+            return c.json({
+                message: "No quotes found",
+                quotes: []
+            });
+        }
+        await c.env.QUOTE_DATA.put(cacheKey, JSON.stringify(quotes), {expirationTtl: 300});
+        return c.json({
+            message: "Quotes retrieved successfully",
+            quotes
+        });
+
+    } catch (error) {
+        console.error("Error fetching quotes:", error);
+        c.status(500);
+        return c.json({
+            error: "Internal server error",
+            message: "Failed to fetch quotes. Please try again later."
+        });
+    } finally {
+        await prisma.$disconnect();
+    }
+});
+
+
+
+// Create new quote
+quoteRouter.post("/", async (c) => {
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL
+    }).$extends(withAccelerate());
+
+    try {
+        const body = await c.req.json();
+        const authorId = c.get("userId");
+
+        if (!body || !body.selectedText) {
+            c.status(400);
+            return c.json({
+                error: "Bad Request",
+                message: "Missing required fields in payload"
+            });
         }
 
         const result = await prisma.quote.create({
@@ -77,45 +152,79 @@ quoteRouter.post("/", async(c)=>{
                 selectedText: body.selectedText,
                 authorId: authorId,
             }
-        }) 
+        });
 
-        c.status(200)
-        return c.json({message: "quote added"})
+        //cache invalidation
+        await c.env.QUOTE_DATA.delete(`quotes:user:${authorId}`);
+        await c.env.QUOTE_DATA.delete(`quotes:bulk`);
+
+        c.status(201); // More appropriate status for resource creation
+        return c.json({
+            message: "Quote created successfully",
+            quote: result
+        });
         
+        //cache invalidation
+       
+       
+       
     } catch (error) {
-        c.status(400)
-        c.json({error: "someshithappened"})
+        console.error("Error creating quote:", error);
+        c.status(500);
+        return c.json({
+            error: "Internal Server Error", 
+            message: "Failed to create quote. Please try again later."
+        });
+    } finally {
+        await prisma.$disconnect();
     }
-})
+});
 
 
 
-quoteRouter.get("/bulk" , async(c)=>{
-    const primsa = new PrismaClient({
+// Get all quotes (bulk)
+quoteRouter.get("/bulk", async (c) => {
+    const prisma = new PrismaClient({
         datasourceUrl: c.env.DATABASE_URL
-    }).$extends(withAccelerate())
+    }).$extends(withAccelerate());
 
     try {
-        const data = await primsa.quote.findMany({})
-        c.status(200)
-        return c.json({data: data})
+
+        //CACHE
+        const cacheKey = `quotes:bulk`;
+        const cachedQuotes  = await c.env.QUOTE_DATA.get(cacheKey);
+        if (cachedQuotes) {
+            return c.json({
+                message: "Quotes retrieved from cache",
+                quotes: JSON.parse(cachedQuotes)
+            });
+        }
+
+        const quotes = await prisma.quote.findMany({});
+
+        //cache-put
+        await c.env.QUOTE_DATA.put(cacheKey, JSON.stringify(quotes), {expirationTtl: 300})
+        return c.json({
+            message: "Quotes retrieved successfully",
+            data: quotes
+        });
     } catch (error) {
-        c.status(400)
-        return c.json({error: "invalid req"})
+        console.error("Error fetching bulk quotes:", error);
+        c.status(500);
+        return c.json({
+            error: "Internal Server Error",
+            message: "Failed to fetch quotes"
+        });
+    } finally {
+        await prisma.$disconnect();
     }
-})
+});
+
+
+/*AI AGENTS TO BE ADDED IN THE APP------
+TITLE GENERATOR-----
+SMM automated post generator-----
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+*/
