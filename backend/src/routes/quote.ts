@@ -178,7 +178,7 @@ quoteRouter.post("/", async (c) => {
         await c.env.QUOTE_DATA.delete(`quotes:user:${authorId}`);
         await c.env.QUOTE_DATA.delete(`quotes:bulk`);
         try {
-            await c.env.payload.send(body)    
+            await c.env.payload.send({...body, id: result.id})    
             console.log("mesage pushed to the queue")
         } catch (error) {
             console.error(error)
