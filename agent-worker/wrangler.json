@@ -5,7 +5,7 @@
   "compatibility_date": "2025-02-09",
 
 
-  "queues": {
+ /* "queues": {
     "consumers": [
       {
         "queue": "payload",
@@ -13,5 +13,8 @@
         "max_batch_timeout": 0
       }
     ]
+  }, */ 
+  "vars": {
+   "DATABASE_URL":"prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiYjc2MzI5YTctNzdiMy00NWI5LTliYmItMWExMWNhZGZlZTkyIiwidGVuYW50X2lkIjoiYTJjYWJkNGRmNmVjZjAwMTA5MmQyNmEwYjAxNmIyOTZhZTE1YTcyZWMxY2JiNTkyNDk3OTg1ODVhMWE3YWFlYyIsImludGVybmFsX3NlY3JldCI6IjlkMGRkOWU2LWI3ZGQtNGU3Ni04YWQwLTk5ODQ4Zjg0ZjA3NSJ9.Ia1rhF6gsrexSujwzV-LeKosgsCD7aLM4rj-KRV8rLI"
   }
 }
