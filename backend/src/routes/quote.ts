@@ -8,6 +8,7 @@ export const quoteRouter = new Hono<{
         DATABASE_URL: string,
         JWT_SECRET: string,
         QUOTE_DATA: KVNamespace,
+        payload: Queue,
     },
     Variables: {
         userId: any;
@@ -127,6 +128,7 @@ quoteRouter.get("/", async (c) => {
             });
         }
        await c.env.QUOTE_DATA.put(cacheKey, JSON.stringify(quotes), {expirationTtl: 300});
+    
         return c.json({
             message: "Quotes retrieved successfully",
             quotes
@@ -175,7 +177,14 @@ quoteRouter.post("/", async (c) => {
         //cache invalidation
         await c.env.QUOTE_DATA.delete(`quotes:user:${authorId}`);
         await c.env.QUOTE_DATA.delete(`quotes:bulk`);
-
+        try {
+            await c.env.payload.send(body)    
+            console.log("mesage pushed to the queue")
+        } catch (error) {
+            console.error(error)
+        }
+        
+        
         c.status(201); // More appropriate status for resource creation
         return c.json({
             message: "Quote created successfully",

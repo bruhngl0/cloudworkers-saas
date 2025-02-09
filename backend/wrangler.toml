@@ -28,6 +28,9 @@ id = "1bcaf9f042d44cbdbe3dd5bfb672b365"
 # enabled = true
 # head_sampling_rate = 1
 
+[[queues.producers]]
+ queue = "payload"
+ binding = "payload"
 
 
 

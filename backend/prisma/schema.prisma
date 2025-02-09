@@ -35,4 +35,5 @@ model Quote {
   createdAt DateTime @default(now()) @db.Timestamp(6)
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
-}
+  category String   @default("uncategorized")
+} 
