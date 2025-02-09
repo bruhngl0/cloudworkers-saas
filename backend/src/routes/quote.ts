@@ -14,6 +14,16 @@ export const quoteRouter = new Hono<{
     }
 }>();
 
+//prismaConnect
+
+const prismaConnect = (dbUrl : string) =>{
+    const prisma = new PrismaClient({
+        datasourceUrl: dbUrl
+    }).$extends(withAccelerate())
+
+    return prisma
+}
+
 
 
 
@@ -68,9 +78,10 @@ quoteRouter.use("/*", async (c, next) => {
 
 // Get user's quotes
 quoteRouter.get("/", async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL
-    }).$extends(withAccelerate());
+
+
+
+    const prisma = prismaConnect(c.env.DATABASE_URL)
 
     try {
         const userId = c.get("userId");
@@ -81,7 +92,7 @@ quoteRouter.get("/", async (c) => {
                 message: "User ID not found in context" 
             });
         }
-         const cacheKey = `quotes:user:${userId}`
+        const cacheKey = `quotes:user:${userId}`
         try{ 
        
         const cachedQuotes  = await c.env.QUOTE_DATA.get(cacheKey);
@@ -92,7 +103,13 @@ quoteRouter.get("/", async (c) => {
             });}
         } catch (error) {
             console.error("⚠️ Cache retrieval error:", error);
-        } 
+        }  
+
+
+
+
+
+
         const quotes = await prisma.quote.findMany({
             where: {
                 authorId: userId
@@ -109,7 +126,7 @@ quoteRouter.get("/", async (c) => {
                 quotes: []
             });
         }
-        await c.env.QUOTE_DATA.put(cacheKey, JSON.stringify(quotes), {expirationTtl: 300});
+       await c.env.QUOTE_DATA.put(cacheKey, JSON.stringify(quotes), {expirationTtl: 300});
         return c.json({
             message: "Quotes retrieved successfully",
             quotes
@@ -131,9 +148,10 @@ quoteRouter.get("/", async (c) => {
 
 // Create new quote
 quoteRouter.post("/", async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL
-    }).$extends(withAccelerate());
+
+
+    const prisma = prismaConnect(c.env.DATABASE_URL)
+       
 
     try {
         const body = await c.req.json();
@@ -184,9 +202,10 @@ quoteRouter.post("/", async (c) => {
 
 // Get all quotes (bulk)
 quoteRouter.get("/bulk", async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL
-    }).$extends(withAccelerate());
+
+
+    const prisma = prismaConnect(c.env.DATABASE_URL)
+    
 
     try {
 
@@ -227,4 +246,4 @@ SMM automated post generator-----
 
 
 
-*/
+*/  

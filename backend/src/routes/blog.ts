@@ -42,6 +42,20 @@ blogRouter.use("/*" , async(c, next)=>{
   
 })
 
+//pagination---
+const pagination = (page: string, limit: string) => {
+
+    const parsedValuePage = parseInt(page, 10)
+    const parsedValueLimit = parseInt(limit, 10)
+  
+    if(parsedValuePage <1 || parsedValueLimit < 1){
+    throw new Error("the page and limit must be postitve integers")
+    }
+    return ({
+      page: parsedValuePage,
+      limit: parsedValueLimit,
+    })
+  }
 
 //POST BLOG HANDLER
 blogRouter.post("/", async (c)=>{
@@ -56,6 +70,26 @@ blogRouter.post("/", async (c)=>{
         c.json({message: "invalid req"})
     }
     const authorId = c.get("userId")
+    if (!authorId) {
+        return c.json({ error: "Unauthorized: Missing userId" }, 401);
+    }
+
+
+    //wirte AI logic for tags and categorization here -------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
     try {
         const blog = await prisma.post.create({
@@ -119,14 +153,38 @@ blogRouter.put("/", async (c)=>{
         datasourceUrl: c.env.DATABASE_URL
     }).$extends(withAccelerate())
     try {
-        const blogs = await prisma.post.findMany()
-        return c.json({blogs: blogs})
+
+        
+
+       const {limit, page} = pagination(c.req.query("page") ||"1", c.req.query("limit")||"10")
+
+        const blogs = await prisma.post.findMany({
+            take: limit, // Number of records per page
+            skip: (page - 1) * limit, // Offset calculation
+            orderBy: { createdAt: "desc" }, // Order by latest
+    })
+
+    const totalpost = await prisma.post.count();
+    const totalPages = Math.ceil(totalpost / limit);
+        return c.json(
+            {
+                blogs: blogs,
+                currentPage: page,
+                totalpost,
+                totalPages,
+            })
 
     } catch (error) {
         return c.json({error})
     }
    
   })
+
+
+
+
+
+//get my blogs
 
   blogRouter.get("/myblog", async (c) => {
     const prisma = new PrismaClient({
@@ -141,11 +199,19 @@ blogRouter.put("/", async (c)=>{
       }
   
       console.log("Querying blogs for authorId:", authorId);
-  
+
+
+
+     const {page, limit} = pagination(c.req.query("page")||"1", c.req.query("limit")||"10")
       const data = await prisma.post.findMany({
         where: {
           authorId: authorId,
+       
         },
+        take: limit,
+        skip: (page-1)* limit,
+        orderBy: {createdAt: "desc"}
+
       });
   
       if (data.length === 0) {
@@ -160,6 +226,12 @@ blogRouter.put("/", async (c)=>{
       return c.json({ error: "Failed to fetch user's blogs." });
     }
   });
+
+
+
+
+
+
 
 
 

@@ -8,9 +8,9 @@ compatibility_date = "2024-12-27"
 DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiYjc2MzI5YTctNzdiMy00NWI5LTliYmItMWExMWNhZGZlZTkyIiwidGVuYW50X2lkIjoiYTJjYWJkNGRmNmVjZjAwMTA5MmQyNmEwYjAxNmIyOTZhZTE1YTcyZWMxY2JiNTkyNDk3OTg1ODVhMWE3YWFlYyIsImludGVybmFsX3NlY3JldCI6IjlkMGRkOWU2LWI3ZGQtNGU3Ni04YWQwLTk5ODQ4Zjg0ZjA3NSJ9.Ia1rhF6gsrexSujwzV-LeKosgsCD7aLM4rj-KRV8rLI"
 JWT_SECRET="secret"
 
-# [[kv_namespaces]]
-# binding = "QUOTE_DATA"
-# id = "1bcaf9f042d44cbdbe3dd5bfb672b365"
+[[kv_namespaces]]
+binding = "QUOTE_DATA"
+id = "1bcaf9f042d44cbdbe3dd5bfb672b365"
 
 # [[r2_buckets]]
 # binding = "MY_BUCKET"
