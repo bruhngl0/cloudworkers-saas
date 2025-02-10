@@ -56,7 +56,7 @@ async function analyzeQuote(text: string, env: any) {
 // And in your queue function, update the analyzeQuote call:
 // Remove this line completely:
 // const category = await analyzeQuote(messageData.selectedText, (env as any).HUGGINGFACE_API_KEY);
-
+//life is good
 // Fix the queue function call
 export default {
   fetch: app.fetch,
