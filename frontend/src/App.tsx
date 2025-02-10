@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route,} from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import './App.css';
 
+
 // Lazy load components
 const Signup = lazy(() => import('./pages/Signup'));
 const Signin = lazy(() => import('./pages/Signin'));
@@ -22,6 +23,7 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/quotes" element={<Quotes />} />
           <Route path="/myblogs" element={<MyBlogs />} />
+         
         </Routes>
       </Suspense>
     </Router>

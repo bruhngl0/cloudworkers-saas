@@ -7,11 +7,13 @@ type Content = {
   publish: boolean;
   createdAt: string;
   authorId: string;
+  
 };
 
 const Quotes = () => {
   const [quote, setQuote] = useState<Content[]>([]);
   const [addQuote, setAddQuote] = useState<string>("")
+
 
   const fetchBlogs = async () => {
     const token = localStorage.getItem("token"); // Retrieve token from localStorage
@@ -110,6 +112,7 @@ const Quotes = () => {
             }}
           >
             {quote.selectedText}
+           
           </li>
         ))}
       </ul>
