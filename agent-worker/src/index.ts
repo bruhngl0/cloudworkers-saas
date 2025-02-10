@@ -3,75 +3,91 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { cors } from 'hono/cors';
 import { Bindings } from 'hono/types';
+import OpenAI from 'openai';
+import { HfInference } from '@huggingface/inference'
 
+// First fix the Bindings interface
 const app = new Hono<{
   Bindings: {
     DATABASE_URL: string,
-    payload: Queue
+    payload: Queue,
+    HUGGING_FACE_KEY: string  // Match the name in wrangler.json
   }
 }>()
 
-app.use("/*",cors())
-
-const prismaConnect = (dbUrl : string)=>{
-  const prisma = new PrismaClient({
-    datasourceUrl: dbUrl
-  }).$extends(withAccelerate())
-
-  return prisma
-}
-
-app.get('/', async (c) => {
-  const prisma = prismaConnect(c.env.DATABASE_URL);
+// Fix the analyzeQuote function
+async function analyzeQuote(text: string, env: any) {
+  console.log('🔄 Analyzing quote:', text);
   
   try {
-    const response = await prisma.quote.findMany({});
-    return c.json({
-      message: "Data fetched successfully",
-      data: response,
+    const hf = new HfInference(env.HUGGING_FACE_KEY);
+    const result = await hf.zeroShotClassification({
+      model: "facebook/bart-large-mnli",
+      inputs: text,
+      parameters: {
+        candidate_labels: [
+          'Finance', 'Education', 'Business', 
+          'Science', 'Politics', 'Sports',
+          'code snippet', 'Youtube Link'
+        ]
+      }
     });
-  } catch (error) {
-    return c.json({
-      message: "Error fetching data",
-    }, 500);
-  } finally {
-    await prisma.$disconnect();
-  }
-});
 
+    console.log('✅ HuggingFace Response:', JSON.stringify(result, null, 2));
+
+    // The result is an array, and we want the highest scoring label
+    if (Array.isArray(result) && result.length > 0) {
+      const firstResult = result[0];
+      // Type assertion to handle unknown type
+      const scores = firstResult.scores as number[];
+      const labels = firstResult.labels as string[];
+      const maxScoreIndex = scores.indexOf(Math.max(...scores));
+      const category = labels[maxScoreIndex];
+      return category;
+    }
+
+    return 'Uncategorized';
+  } catch (error) {
+    console.error('❌ Classification Error:', error);
+    return 'Uncategorized';
+  }
+}
+
+// And in your queue function, update the analyzeQuote call:
+// Remove this line completely:
+// const category = await analyzeQuote(messageData.selectedText, (env as any).HUGGINGFACE_API_KEY);
+
+// Fix the queue function call
 export default {
   fetch: app.fetch,
-  async queue(batch: MessageBatch<any>, env: string, ctx: ExecutionContext) {
-    const prisma = prismaConnect((env as any).DATABASE_URL);
+  async queue(batch: MessageBatch<any>, env: any, ctx: ExecutionContext) {
+    const prisma = new PrismaClient({
+      datasourceUrl: env.DATABASE_URL,
+    }).$extends(withAccelerate());
     
     try {
-      // Convert batch messages to array for easier understanding
       const messages = batch.messages;
       
-      // Loop through each message one by one
       for (let i = 0; i < messages.length; i++) {
-        // Get the current message's body
         const messageData = messages[i].body;
-        
-        // Log what we received
-        console.log('Processing message number:', i + 1);
-        console.log('Message data:', messageData);
-        
-        // Update the quote in database
-        await prisma.quote.update({
-          where: { 
-            id: messageData.id 
-          },
-          data: { 
-            category: "finance"
-          }
+        console.log('📝 Processing quote:', {
+          id: messageData.id,
+          text: messageData.selectedText
         });
         
-        // Log success
-        console.log(`Updated quote ${messageData.id} to finance category`);
+        // Pass the entire env object instead of just the key
+        const category = await analyzeQuote(messageData.selectedText, env);
+        console.log('🏷️ Category assigned:', category);
+        
+        await prisma.quote.update({
+          where: { id: messageData.id },
+          data: { category: category.toLowerCase() }
+        });
+        
+        console.log('✅ Database updated for quote:', messageData.id);
       }
     } catch (error) {
-      console.error('Queue processing error:', error);
+      console.error('❌ Queue error:', error);
     } finally {
       await prisma.$disconnect();
     }
