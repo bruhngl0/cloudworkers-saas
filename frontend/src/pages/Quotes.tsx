@@ -7,11 +7,13 @@ type Content = {
   publish: boolean;
   createdAt: string;
   authorId: string;
+  category: string;
   
 };
 
 const Quotes = () => {
   const [quote, setQuote] = useState<Content[]>([]);
+  const [category, setCategory] = useState<string>("")
   const [addQuote, setAddQuote] = useState<string>("")
 
 
@@ -34,6 +36,7 @@ const Quotes = () => {
       );
       console.log(response.data)
       setQuote(response.data.quotes);
+      setCategory(response.data.category)
     } catch (err) {
       console.error("Error fetching quotes");
     }
@@ -62,6 +65,7 @@ const Quotes = () => {
     )
     console.log(response)
     setAddQuote("")
+
     fetchBlogs()
 
    } catch (error) {
@@ -111,7 +115,9 @@ const Quotes = () => {
               whiteSpace: "pre-wrap", // Preserves line breaks in displayed text
             }}
           >
-            {quote.selectedText}
+            {quote.selectedText} <br/>
+
+            category : {quote.category}
            
           </li>
         ))}
