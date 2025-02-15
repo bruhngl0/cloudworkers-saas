@@ -36,7 +36,7 @@ const Quotes = () => {
       );
       console.log(response.data)
       setQuote(response.data.quotes);
-      setCategory(response.data.category)
+     
     } catch (err) {
       console.error("Error fetching quotes");
     }
