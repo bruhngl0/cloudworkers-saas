@@ -1,41 +1,89 @@
-// Quotes.module.scss
+$primary-color: #6a0dad;
+$background-color: #f9f9f9;
+$text-color: #333;
+$border-radius: 8px;
 
-.container {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    max-width: 600px;
-    margin: 20px auto;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
+.quotes-container {
+  max-width: 100vw;
+  margin: 40px auto;
+  padding: 20px;
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: "Helvetica", sans-serif;
+
   .title {
+    text-align: center;
     font-size: 24px;
     font-weight: bold;
-    text-align: center;
-    color: #333;
+    color: $primary-color;
     margin-bottom: 20px;
   }
-  
-  .quoteList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .quoteItem {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    padding: 10px 15px;
-    font-size: 16px;
-    color: #555;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-  
-    &:hover {
-      background-color: #f0f8ff;
-      transform: scale(1.02);
+
+  .quote-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 10px;
+      border-radius: $border-radius;
+      border: 1px solid #ddd;
+      font-size: 16px;
+      resize: vertical;
+      outline: none;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba(106, 13, 173, 0.3);
+      }
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      background: $primary-color;
+      color: white;
+      font-size: 16px;
+      border-radius: $border-radius;
+      cursor: pointer;
+      transition: background 0.3s ease;
+
+      &:hover {
+        
+      }
     }
   }
-  
+
+  .quotes-list {
+    margin-top: 20px;
+    padding: 0;
+    list-style: none;
+
+    .quote-item {
+      background: $background-color;
+      padding: 12px;
+      border-radius: $border-radius;
+      border: 1px solid #ddd;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+
+      .quote-text {
+        font-size: 16px;
+        font-weight: 500;
+        color: $text-color;
+        margin-bottom: 5px;
+      }
+
+      .quote-category {
+        font-size: 14px;
+        font-weight: bold;
+        color: $primary-color;
+      }
+    }
+  }
+}
