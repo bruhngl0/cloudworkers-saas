@@ -13,7 +13,7 @@ type Content = {
 
 const Quotes = () => {
   const [quote, setQuote] = useState<Content[]>([]);
-  const [category, setCategory] = useState<string>("")
+
   const [addQuote, setAddQuote] = useState<string>("")
 
 
