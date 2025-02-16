@@ -1,24 +1,27 @@
-import { Hono } from 'hono'
+import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
-import { cors } from 'hono/cors';
-import { Bindings } from 'hono/types';
-import OpenAI from 'openai';
-import { HfInference } from '@huggingface/inference'
+import { cors } from "hono/cors";
+import { HfInference } from "@huggingface/inference";
+import { CategoryUpdateHandler } from "./durableObjects"; // ✅ Import Durable Object
 
-// First fix the Bindings interface
+export { CategoryUpdateHandler }; // ✅ Ensure it's exported for Cloudflare Workers
+
+// Initialize Hono app
 const app = new Hono<{
   Bindings: {
-    DATABASE_URL: string,
-    payload: Queue,
-    HUGGING_FACE_KEY: string  // Match the name in wrangler.json
-  }
-}>()
+    DATABASE_URL: string;
+    payload: Queue;
+    HUGGING_FACE_KEY: string;
+    CATEGORY_UPDATES: DurableObjectNamespace; // ✅ Durable Object Binding
+    DURABLE_OBJECT_ID: string;
+  };
+}>();
 
-// Fix the analyzeQuote function
+// Function to analyze quote using Hugging Face
 async function analyzeQuote(text: string, env: any) {
-  console.log('🔄 Analyzing quote:', text);
-  
+  console.log("🔄 Analyzing quote:", text);
+
   try {
     const hf = new HfInference(env.HUGGING_FACE_KEY);
     const result = await hf.zeroShotClassification({
@@ -26,19 +29,22 @@ async function analyzeQuote(text: string, env: any) {
       inputs: text,
       parameters: {
         candidate_labels: [
-          'Finance', 'Education', 'Business', 
-          'Science', 'Politics', 'Sports',
-          'code snippet', 'Youtube Link'
-        ]
-      }
+          "Finance",
+          "Education",
+          "Business",
+          "Science",
+          "Politics",
+          "Sports",
+          "Code Snippet",
+          "YouTube Link",
+        ],
+      },
     });
 
-    console.log('✅ HuggingFace Response:', JSON.stringify(result, null, 2));
+    console.log("✅ HuggingFace Response:", JSON.stringify(result, null, 2));
 
-    // The result is an array, and we want the highest scoring label
     if (Array.isArray(result) && result.length > 0) {
       const firstResult = result[0];
-      // Type assertion to handle unknown type
       const scores = firstResult.scores as number[];
       const labels = firstResult.labels as string[];
       const maxScoreIndex = scores.indexOf(Math.max(...scores));
@@ -46,50 +52,68 @@ async function analyzeQuote(text: string, env: any) {
       return category;
     }
 
-    return 'Uncategorized';
+    return "Uncategorized";
   } catch (error) {
-    console.error('❌ Classification Error:', error);
-    return 'Uncategorized';
+    console.error("❌ Classification Error:", error);
+    return "Uncategorized";
   }
 }
 
-// And in your queue function, update the analyzeQuote call:
-// Remove this line completely:
-// const category = await analyzeQuote(messageData.selectedText, (env as any).HUGGINGFACE_API_KEY);
-//life is good
-// Fix the queue function call
+// ✅ Queue Consumer Worker
 export default {
-  fetch: app.fetch,
   async queue(batch: MessageBatch<any>, env: any, ctx: ExecutionContext) {
     const prisma = new PrismaClient({
       datasourceUrl: env.DATABASE_URL,
     }).$extends(withAccelerate());
-    
+
     try {
-      const messages = batch.messages;
-      
-      for (let i = 0; i < messages.length; i++) {
-        const messageData = messages[i].body;
-        console.log('📝 Processing quote:', {
+      for (const message of batch.messages) {
+        const messageData = message.body;
+        console.log("📩 Processing quote:", {
           id: messageData.id,
-          text: messageData.selectedText
+          text: messageData.selectedText,
         });
-        
-        // Pass the entire env object instead of just the key
+
+        // ✅ AI Categorization
         const category = await analyzeQuote(messageData.selectedText, env);
-        console.log('🏷️ Category assigned:', category);
-        
+        console.log("🏷️ Category assigned:", category);
+
+        // ✅ Update Database with the new category
         await prisma.quote.update({
           where: { id: messageData.id },
-          data: { category: category.toLowerCase() }
+          data: { category: category.toLowerCase() },
         });
-        
-        console.log('✅ Database updated for quote:', messageData.id);
+
+        console.log("✅ Database updated for quote:", messageData.id);
+
+        // ✅ Notify WebSocket Clients via Durable Object
+        try {
+          const durableObjectId = env.CATEGORY_UPDATES.idFromName(
+            env.DURABLE_OBJECT_ID
+          );
+          const durableObjectStub = env.CATEGORY_UPDATES.get(durableObjectId);
+
+          // 🔥 Send category update via WebSocket
+          await durableObjectStub.fetch("https://fake-url/", {
+            method: "POST",
+            body: JSON.stringify({
+              id: messageData.id,
+              category,
+            }),
+          });
+
+          console.log("📡 WebSocket update sent:", {
+            id: messageData.id,
+            category,
+          });
+        } catch (wsError) {
+          console.error("⚠️ Error sending WebSocket update:", wsError);
+        }
       }
     } catch (error) {
-      console.error('❌ Queue error:', error);
+      console.error("❌ Queue processing error:", error);
     } finally {
       await prisma.$disconnect();
     }
-  }
-}
+  },
+};
